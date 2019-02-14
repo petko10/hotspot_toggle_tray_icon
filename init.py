@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys, os, subprocess
-from PySide2.QtWidgets import QApplication, QSystemTrayIcon
+from PySide2.QtWidgets import QApplication, QSystemTrayIcon, QAction, QMenu
 from PySide2.QtCore import QTimer
 from PySide2.QtGui import QIcon
 
@@ -23,15 +23,24 @@ def toggleHotspot():
         subprocess.call(["systemctl", "start", "create_ap"])
 
 
+def handleTrayIconClick(reason):
+    if reason != QSystemTrayIcon.Context:
+        toggleHotspot()
+
+
 def main():
     basePath = os.path.dirname(os.path.realpath(__file__))
     app = QApplication(sys.argv)
+    contextMenu = QMenu()
+    fixAction = QAction("Run 'create__ap --fix-unmanaged' in the terminal as root to fix possible issues")
+    contextMenu.addAction(fixAction)
     activeIcon = QIcon()
     activeIcon.addFile(os.path.join(basePath, "wifi.svg"))
     inactiveIcon = QIcon()
     inactiveIcon.addFile(os.path.join(basePath, "wifi-off.svg"))
     trayIcon = QSystemTrayIcon(inactiveIcon)
-    trayIcon.activated.connect(toggleHotspot)
+    trayIcon.setContextMenu(contextMenu)
+    trayIcon.activated.connect(handleTrayIconClick)
 
     def syncIcon():
         if serviceIsActive():
